@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stoogle">
+<meta name="app-repo" content="Stoogle">
+<meta name="app-version" content="1.0.0">
+<title>Stoogle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" crossorigin="anonymous">
+<style>
+  :root{
+    --bg:#000; --neon:#35b6f2; --gold:#ffd700; --green:#00ff88;
+    --ink:#dff4ff; --muted:#6f8894; --line:#1a1d20;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    background:var(--bg); color:var(--ink); min-height:100dvh;
+    font-family:'Share Tech Mono',ui-monospace,Menlo,Consolas,monospace;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+    padding:0 16px calc(env(safe-area-inset-bottom) + 40px);
+    display:flex; flex-direction:column; align-items:center;
+  }
+
+  /* ---- home state: everything centred, Google-style ---- */
+  .stage{
+    width:100%; max-width:600px;
+    display:flex; flex-direction:column; align-items:center;
+    padding-top:calc(env(safe-area-inset-top) + 18vh);
+    transition:padding-top .25s ease;
+  }
+  body.searching .stage{padding-top:calc(env(safe-area-inset-top) + 18px)}
+
+  .wordmark{
+    font-family:'Orbitron',sans-serif; font-weight:900;
+    font-size:clamp(38px,13vw,68px); letter-spacing:2px;
+    margin-bottom:22px; user-select:none; white-space:nowrap;
+    transition:font-size .25s ease, margin-bottom .25s ease;
+  }
+  body.searching .wordmark{font-size:clamp(24px,7vw,34px);margin-bottom:14px}
+  .wordmark span:nth-child(1){color:#35b6f2;text-shadow:0 0 14px rgba(53,182,242,.7)}
+  .wordmark span:nth-child(2){color:#ff4466;text-shadow:0 0 14px rgba(255,68,102,.6)}
+  .wordmark span:nth-child(3){color:#ffd700;text-shadow:0 0 14px rgba(255,215,0,.6)}
+  .wordmark span:nth-child(4){color:#35b6f2;text-shadow:0 0 14px rgba(53,182,242,.7)}
+  .wordmark span:nth-child(5){color:#00ff88;text-shadow:0 0 14px rgba(0,255,136,.6)}
+  .wordmark span:nth-child(6){color:#ff4466;text-shadow:0 0 14px rgba(255,68,102,.6)}
+  .wordmark span:nth-child(7){color:#ffd700;text-shadow:0 0 14px rgba(255,215,0,.6)}
+
+  .searchbar{
+    width:100%; display:flex; align-items:center; gap:10px;
+    border:1px solid rgba(53,182,242,.45); border-radius:999px;
+    background:#08090b; padding:11px 18px;
+    box-shadow:0 0 14px rgba(53,182,242,.15);
+  }
+  .searchbar:focus-within{border-color:var(--neon);box-shadow:0 0 18px rgba(53,182,242,.35)}
+  .searchbar .mag{color:var(--muted);font-size:15px}
+  #q{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--ink); font-family:inherit; font-size:16px;
+  }
+  #q::placeholder{color:var(--muted)}
+  .clear{
+    background:none;border:none;color:var(--muted);font-family:inherit;
+    font-size:16px;cursor:pointer;display:none;padding:0 2px;
+  }
+  .clear.show{display:block}
+
+  .buttons{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap;justify-content:center}
+  body.searching .buttons{display:none}
+  .btn{
+    background:transparent; border:1px solid rgba(53,182,242,.35); border-radius:4px;
+    color:var(--muted); font-family:inherit; font-size:13px; letter-spacing:1px;
+    padding:9px 16px; cursor:pointer;
+  }
+  .btn:active{border-color:var(--neon);color:var(--neon)}
+
+  /* ---- results ---- */
+  .meta{
+    width:100%;max-width:600px;color:var(--muted);font-size:12px;
+    margin:18px 0 6px;display:none;
+  }
+  body.searching .meta{display:block}
+  .results{width:100%;max-width:600px}
+  .result{
+    display:block; text-decoration:none; color:inherit;
+    padding:14px 0; border-bottom:1px solid var(--line);
+  }
+  .result:active{background:rgba(53,182,242,.06)}
+  .r-url{color:var(--green);font-size:11px;word-break:break-all;opacity:.75}
+  .r-title{
+    font-family:'Orbitron',sans-serif;font-weight:700;font-size:16px;
+    color:#7fd8ff;margin:3px 0 4px;text-shadow:0 0 10px rgba(53,182,242,.35);
+  }
+  .r-snippet{color:var(--muted);font-size:13px}
+  .r-snippet mark{background:none;color:var(--gold)}
+  .none{color:var(--muted);font-size:13px;padding:18px 0}
+  .weblink{
+    display:inline-block;margin-top:14px;color:var(--neon);
+    font-size:13px;text-decoration:none;border-bottom:1px dotted var(--neon);
+  }
+  #stamp{
+    position:fixed;right:calc(env(safe-area-inset-right) + 8px);
+    bottom:calc(env(safe-area-inset-bottom) + 5px);
+    font-size:9px;letter-spacing:1px;color:var(--neon);opacity:.3;
+    pointer-events:none;user-select:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="wordmark" id="wordmark">
+    <span>S</span><span>t</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+  </div>
+
+  <div class="searchbar">
+    <span class="mag">&#9906;</span>
+    <input id="q" type="search" placeholder="Search Ben's stuff" autocomplete="off"
+           autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <button class="clear" id="clear" aria-label="Clear">&times;</button>
+  </div>
+
+  <div class="buttons">
+    <button class="btn" id="lucky">I&rsquo;m Feeling Sticky</button>
+    <button class="btn" id="all">Show everything</button>
+  </div>
+
+  <div class="meta" id="meta"></div>
+  <div class="results" id="results"></div>
+</div>
+
+<div id="stamp">STOOGLE v1.0.0</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   THE INDEX — add a line per project.
+   tags are extra words that should match but aren't in the name.
+   ───────────────────────────────────────────────────────────── */
+const INDEX = [
+  { name:"Room 46",      url:"https://small-boat-e0d9.ben-stiff.workers.dev",
+    desc:"Puzzle dungeon roguelike. Work your way through the mansion to Room 46 and claim the estate.",
+    tags:"roguelike dungeon mansion rooms keys gems puzzle roomtris" },
+
+  { name:"Maze",         url:"https://s77ffy.github.io/Room46/index.html",
+    desc:"Companion app for the puzzle book Maze.",
+    tags:"book companion puzzle riddle" },
+
+  { name:"Kadoosh",      url:"https://s77ffy.github.io/Kadoosh/index.html",
+    desc:"Two-player grid strategy game.",
+    tags:"strategy board two player versus grid" },
+
+  { name:"Darts Night",  url:"https://s77ffy.github.io/DartsNight/index.html",
+    desc:"Runs Wednesday darts night — players, fixtures and the running order.",
+    tags:"darts wednesday league fixtures crew night arrows" },
+
+  { name:"Darts Scorer", url:"https://s77ffy.github.io/Grid/darts-scorer-v1.0.9.html",
+    desc:"Live scoring for a game of darts.",
+    tags:"darts score 501 checkout arrows" },
+
+  { name:"Bat Physics",  url:"https://s77ffy.github.io/BatPhysics/index.html",
+    desc:"Physics puzzle game, an homage to Cat Physics.",
+    tags:"physics puzzle bat ball bounce cat physics" },
+
+  { name:"Fenn Museum",  url:"https://s77ffy.github.io/FennMuseum/index.html",
+    desc:"The museum that goes with The Fenn Job.",
+    tags:"museum fenn exhibits heist gallery" },
+
+  { name:"The Fenn Job", url:"https://s77ffy.github.io/TheFennJob/index.html",
+    desc:"Three.js museum heist game — get in, take it, get out.",
+    tags:"heist 3d three.js museum steal thief robbery" },
+
+  { name:"Noms",         url:"https://s77ffy.github.io/Noms/index.html",
+    desc:"Nomination Whist scorer and game for the card crew.",
+    tags:"cards whist nomination scorer trumps tricks bids" },
+
+  { name:"Mechanism",    url:"https://s77ffy.github.io/Mechanism/index.html",
+    desc:"3D rotating puzzle box.",
+    tags:"3d puzzle box rotate mechanism dials" },
+
+  { name:"Mora Jai",     url:"https://s77ffy.github.io/MoraJai/index.html",
+    desc:"Blue Prince-inspired puzzle box.",
+    tags:"puzzle box blue prince colours tiles" },
+
+  { name:"Bloodline",    url:"https://s77ffy.github.io/Bloodline/index.html",
+    desc:"ZX Spectrum-style caveman roguelike about learning language.",
+    tags:"roguelike caveman spectrum words language first words retro 8-bit" },
+
+  { name:"Torii Run",    url:"https://s77ffy.github.io/Grid/torri-run.html",
+    desc:"3D mobile runner with a sumo wrestler.",
+    tags:"runner 3d sumo japan torii endless run" },
+
+  { name:"5aSide",       url:"https://five-aside-mate.lovable.app",
+    desc:"Five-a-side football organiser.",
+    tags:"football five a side footy teams pitch match" },
+
+  { name:"Grid",         url:"https://s77ffy.github.io/Grid/index.html",
+    desc:"The neon launcher with every project on it.",
+    tags:"launcher home menu neon squares links" },
+
+  { name:"Publisher",    url:"https://s77ffy.github.io/Grid/publish.html",
+    desc:"Pushes a build straight to the right GitHub repo as index.html.",
+    tags:"github publish upload deploy token repo release build" }
+];
+
+const $ = id => document.getElementById(id);
+const q = $("q"), results = $("results"), meta = $("meta");
+
+function score(item, terms){
+  const name = item.name.toLowerCase();
+  const hay  = (item.name + " " + item.desc + " " + item.tags).toLowerCase();
+  let s = 0;
+  for (const t of terms){
+    if (!hay.includes(t)) return 0;              // every term must appear somewhere
+    if (name === t) s += 100;
+    else if (name.startsWith(t)) s += 40;
+    else if (name.includes(t)) s += 25;
+    if (item.tags.toLowerCase().includes(t)) s += 8;
+    if (item.desc.toLowerCase().includes(t)) s += 4;
+  }
+  return s;
+}
+
+function highlight(text, terms){
+  let out = text.replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
+  for (const t of terms){
+    if (t.length < 2) continue;
+    out = out.replace(new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&") + ")", "gi"), "<mark>$1</mark>");
+  }
+  return out;
+}
+
+function render(list, terms, query){
+  results.innerHTML = "";
+  if (!list.length){
+    results.innerHTML = '<div class="none">Nothing here matches that.</div>' +
+      '<a class="weblink" target="_blank" rel="noopener" href="https://www.google.com/search?q=' +
+      encodeURIComponent(query) + '">Try it on Google instead &rarr;</a>';
+    meta.textContent = "0 results for " + query;
+    return;
+  }
+  meta.textContent = list.length + (list.length === 1 ? " result" : " results") +
+                     (query ? " for " + query : "");
+  list.forEach(item => {
+    const a = document.createElement("a");
+    a.className = "result";
+    a.href = item.url;
+    a.rel = "noopener";
+    a.innerHTML =
+      '<div class="r-url">' + item.url.replace(/^https?:\/\//,"") + '</div>' +
+      '<div class="r-title">' + item.name + '</div>' +
+      '<div class="r-snippet">' + highlight(item.desc, terms) + '</div>';
+    results.appendChild(a);
+  });
+}
+
+function search(){
+  const query = q.value.trim();
+  $("clear").classList.toggle("show", query.length > 0);
+  if (!query){
+    document.body.classList.remove("searching");
+    results.innerHTML = "";
+    meta.textContent = "";
+    return;
+  }
+  document.body.classList.add("searching");
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = INDEX.map(i => ({ i, s: score(i, terms) }))
+                    .filter(x => x.s > 0)
+                    .sort((a,b) => b.s - a.s)
+                    .map(x => x.i);
+  render(hits, terms, query);
+}
+
+q.addEventListener("input", search);
+q.addEventListener("keydown", e => {
+  if (e.key === "Enter"){
+    const first = results.querySelector(".result");
+    if (first){ q.blur(); location.href = first.href; }
+  }
+  if (e.key === "Escape"){ q.value = ""; search(); }
+});
+$("clear").addEventListener("click", () => { q.value = ""; search(); q.focus(); });
+$("lucky").addEventListener("click", () => {
+  location.href = INDEX[Math.floor(Math.random() * INDEX.length)].url;
+});
+$("all").addEventListener("click", () => {
+  document.body.classList.add("searching");
+  render(INDEX.slice().sort((a,b) => a.name.localeCompare(b.name)), [], "");
+  meta.textContent = INDEX.length + " projects";
+});
+
+/* deep link: stoogle.html?q=darts */
+const preset = new URLSearchParams(location.search).get("q");
+if (preset){ q.value = preset; search(); }
+else if (matchMedia("(hover:hover)").matches) q.focus();
+</script>
+</body>
+</html>
